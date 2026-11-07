@@ -20,6 +20,8 @@ ES module 在 `file://` 下会被浏览器的 CORS 策略拦截，所以请不�
 index.html          页面骨架
 styles.css          塔罗视觉、翻面、发牌与通讯录样式
 game.js             主流程、翻面、结果生成、通讯录、localStorage
+share.js            分享卡 Canvas 绘制（1080×1440 PNG 导出）
+qr.js               最小 QR 编码器（byte 模式、版本 1–3、纠错 M）
 data/traits.js      12 张品质卡的文案与四维权重
 data/combos.js      专属组合文案（以及「矛盾体」标记）
 data/config.js      全部界面文案、兜底句式、弱维台词、关系与存储键

@@ -1,6 +1,7 @@
 import { config } from './data/config.js';
 import { traits } from './data/traits.js';
 import { combos } from './data/combos.js';
+import { createShareCard } from './share.js';
 
 const c = config.copy;
 const $ = (selector, root = document) => root.querySelector(selector);
@@ -173,6 +174,12 @@ function applyCopy() {
 
   $('#result-save').textContent = c.result.save;
   $('#result-again').textContent = c.result.again;
+  $('#result-share').textContent = c.share.button;
+
+  $('#share-title').textContent = c.share.title;
+  $('#share-close').textContent = c.share.close;
+  $('#share-download').textContent = c.share.save;
+  $('#share-image').alt = c.share.previewAlt;
 }
 
 function buildRelations() {
@@ -203,6 +210,7 @@ function buildTraitGrid() {
 function showScreen(name) {
   clearTimers();
   if (!$('#overlay').hidden) closeDetail();
+  if (!$('#share-overlay').hidden) closeShareCard();
   state.screen = name;
 
   $$('.screen').forEach((screen) => {
@@ -634,6 +642,39 @@ function closeDetail() {
   document.body.classList.remove('no-scroll');
 }
 
+/* ---------- 分享卡 ---------- */
+
+function isIOS() {
+  return (
+    /iP(hone|ad|od)/.test(navigator.userAgent)
+    || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
+  );
+}
+
+function openShareCard() {
+  const result = state.result;
+  if (!result) return;
+
+  const share = createShareCard(result, traitById);
+  $('#share-image').src = share.dataUrl;
+
+  const link = $('#share-download');
+  link.href = share.dataUrl;
+  link.download = `${c.share.filePrefix}${result.name || 'card'}.png`;
+
+  $('#share-hint').textContent = isIOS() ? c.share.iosHint : '';
+
+  $('#share-overlay').hidden = false;
+  document.body.classList.add('no-scroll');
+}
+
+function closeShareCard() {
+  $('#share-overlay').hidden = true;
+  $('#share-image').removeAttribute('src');
+  $('#share-hint').textContent = '';
+  document.body.classList.remove('no-scroll');
+}
+
 /* ---------- 事件 ---------- */
 
 function bindEvents() {
@@ -708,6 +749,7 @@ function bindEvents() {
   });
 
   $('#result-save').addEventListener('click', saveResult);
+  $('#result-share').addEventListener('click', openShareCard);
 
   $('#result-again').addEventListener('click', () => {
     resetRound();
@@ -715,9 +757,16 @@ function bindEvents() {
   });
 
   $('#overlay-backdrop').addEventListener('click', closeDetail);
+  $('#share-backdrop').addEventListener('click', closeShareCard);
+  $('#share-close').addEventListener('click', closeShareCard);
 
   document.addEventListener('keydown', (event) => {
-    if (event.key === 'Escape' && !$('#overlay').hidden) closeDetail();
+    if (event.key !== 'Escape') return;
+    if (!$('#share-overlay').hidden) {
+      closeShareCard();
+    } else if (!$('#overlay').hidden) {
+      closeDetail();
+    }
   });
 }
 

@@ -103,6 +103,21 @@ export const config = {
       savedOn: '存入于 {date}',
     },
 
+    share: {
+      button: '生成分享卡',
+      title: '分享卡',
+      kicker: '恋人 · 角色卡',
+      hook: '这三个词，你敢签吗',
+      paradox: '矛盾体',
+      qrUrl: 'https://helloworld521.github.io/tarot-card',
+      qrText: 'helloworld521.github.io/tarot-card',
+      save: '保存图片',
+      iosHint: '长按图片，保存到相册',
+      previewAlt: '恋人角色卡分享图',
+      filePrefix: 'lover-card-',
+      close: '收起',
+    },
+
     toast: {
       saved: '已存入通讯录',
       deleted: '已删除',
