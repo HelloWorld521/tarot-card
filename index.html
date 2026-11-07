@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0a0710">
+  <title>恋人 · 卡</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="grain" aria-hidden="true"></div>
+
+  <div class="app">
+    <header class="topbar">
+      <button class="brand" id="brand" type="button"></button>
+      <button class="top-link" id="top-contacts" type="button"></button>
+    </header>
+
+    <main class="stage" id="stage">
+      <section class="screen" id="screen-start" data-screen="start">
+        <div class="start-body">
+          <p class="eyebrow" id="start-eyebrow"></p>
+          <h1 class="display" id="start-title"></h1>
+          <p class="lead" id="start-lead"></p>
+          <div class="start-actions">
+            <button class="btn primary" id="start-btn" type="button"></button>
+          </div>
+        </div>
+        <div class="hero-deck" aria-hidden="true">
+          <div class="hero-card card-pattern hc-1"></div>
+          <div class="hero-card card-pattern hc-2"></div>
+          <div class="hero-card card-pattern hc-3"></div>
+        </div>
+      </section>
+
+      <section class="screen" id="screen-relation" data-screen="relation">
+        <div class="flow narrow">
+          <div class="screen-head">
+            <p class="step-label" id="relation-step"></p>
+            <h2 class="h2" id="relation-title"></h2>
+            <p class="hint" id="relation-hint"></p>
+          </div>
+          <div class="relation-list" id="relation-list"></div>
+          <div class="screen-foot">
+            <button class="btn primary" id="relation-next" type="button" disabled></button>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen" id="screen-name" data-screen="name">
+        <div class="flow narrow">
+          <div class="screen-head">
+            <p class="step-label" id="name-step"></p>
+            <h2 class="h2" id="name-title"></h2>
+            <p class="hint" id="name-hint"></p>
+          </div>
+          <div class="name-field">
+            <div class="avatar avatar-lg" id="name-avatar" aria-hidden="true">
+              <span class="avatar-letter">·</span>
+            </div>
+            <div class="name-input-wrap">
+              <input
+                class="name-input"
+                id="name-input"
+                type="text"
+                maxlength="12"
+                autocomplete="off"
+                autocorrect="off"
+                spellcheck="false"
+              >
+              <span class="input-line" aria-hidden="true"></span>
+            </div>
+          </div>
+          <div class="screen-foot">
+            <button class="btn primary" id="name-next" type="button" disabled></button>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen" id="screen-select" data-screen="select">
+        <div class="flow wide">
+          <div class="select-head">
+            <div class="screen-head">
+              <p class="step-label" id="select-step"></p>
+              <div class="select-title-row">
+                <h2 class="h2" id="select-title"></h2>
+                <span class="sel-count" id="sel-count"></span>
+              </div>
+              <p class="hint" id="select-hint"></p>
+            </div>
+          </div>
+          <div class="traits-grid" id="traits-grid"></div>
+          <div class="select-footer">
+            <div class="sel-status">
+              <div class="sel-dots" id="sel-dots" aria-hidden="true"></div>
+              <p class="sel-limit" id="sel-limit"></p>
+            </div>
+            <button class="btn primary" id="select-next" type="button" disabled></button>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen" id="screen-reveal" data-screen="reveal">
+        <div class="flow reveal-flow">
+          <div class="screen-head">
+            <h2 class="h2" id="reveal-title"></h2>
+            <p class="hint" id="reveal-hint"></p>
+          </div>
+          <div class="reveal-list" id="reveal-list"></div>
+          <div class="screen-foot">
+            <button class="btn primary reveal-next" id="reveal-next" type="button" hidden></button>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen" id="screen-result" data-screen="result">
+        <div class="flow narrow">
+          <div class="result-sheet" id="result-sheet"></div>
+          <div class="result-actions">
+            <button class="btn primary" id="result-save" type="button"></button>
+            <button class="btn ghost" id="result-again" type="button"></button>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen" id="screen-contacts" data-screen="contacts">
+        <div class="flow narrow">
+          <div class="screen-head contacts-head">
+            <h2 class="h2" id="contacts-title"></h2>
+            <p class="hint" id="contacts-count"></p>
+          </div>
+          <div id="contacts-body"></div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div class="overlay" id="overlay" hidden>
+    <div class="overlay-backdrop" id="overlay-backdrop"></div>
+    <div class="detail" id="detail" role="dialog" aria-modal="true" aria-label="角色卡详情"></div>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script type="module" src="game.js"></script>
+</body>
+</html>
