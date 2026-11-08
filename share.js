@@ -196,6 +196,15 @@ export function createShareCard(result, traitById) {
   drawSpaced(ctx, result.name, 540, 386, 76, 6, INK, 400);
   drawDivider(ctx, 436);
 
+  // 分享图只露总分，不露四维分项与任何代价信息。左上角与右上角的「矛盾体」对称。
+  if (result.scores && typeof result.scores.total === 'number') {
+    ctx.fillStyle = 'rgba(199,168,107,0.9)';
+    ctx.font = `400 22px ${SERIF}`;
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'alphabetic';
+    ctx.fillText(share.score.replace('{total}', result.scores.total), 84, 120);
+  }
+
   const names = result.traits.map((id) => traitById[id]?.name || '');
   names.forEach((name, index) => {
     drawSpaced(ctx, name, 540, 580 + index * 170, 140, 26, INK, 400);

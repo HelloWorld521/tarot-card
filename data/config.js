@@ -4,9 +4,13 @@
 export const config = {
   storageKey: 'tarot-lover-cards-v1',
   maxTraits: 3,
-  cardNumerals: ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII'],
+  cardNumerals: [
+    'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII',
+    'IX', 'X', 'XI', 'XII', 'XIII', 'XIV', 'XV', 'XVI',
+  ],
 
-  // 四维：求和后最低的一维，决定结果卡的「你最怕的是……」
+  // 四维：求和后最低的一维，决定结果卡的「你最怕的是……」；
+  // 求和后同时按下面两个常量线性映射为得分。
   axes: [
     { key: 'security', label: '安全感', weak: '被丢下' },
     { key: 'space', label: '空间', weak: '被围住' },
@@ -14,6 +18,20 @@ export const config = {
     { key: 'intensity', label: '强度', weak: '日子淡得像白水' },
   ],
   weakSentence: '你最怕的是{weak}。',
+
+  // 得分标定。单维先把三张卡的原始和（-9 ~ 9）线性拉开成 0 ~ 25 的「原始分」，
+  // 再把四维原始总分按当前 16 张卡 560 种三卡组合的实际范围标定到 80 ~ 100。
+  // 锚点来自 2026-11-08 全量实测：原始总分最低 51、最高 71。
+  // 以后调 traits.js 的 axes 后，必须重算分布并同步这两组锚点，否则分布会再次挤在一起。
+  axisRange: 3,
+  scoring: {
+    rawMin: 0,
+    rawMax: 25,
+    rawTotalFloor: 51,
+    rawTotalCeiling: 71,
+    minTotal: 80,
+    maxTotal: 100,
+  },
 
   // 第三层兜底模板：{first} 第一张牌，{second} 第二张牌，{third} 第三张牌，
   // {cost2} / {cost3} 是对应牌的代价大字。
@@ -81,6 +99,9 @@ export const config = {
       traitsLabel: '品质',
       comboLabel: '组合',
       costsLabel: '代价',
+      scoreLabel: '总分',
+      scoreDenominator: '/ 100',
+      scoresLabel: '四维得分',
       save: '存入通讯录',
       saved: '已存入 · 查看通讯录',
       again: '重新建一张',
@@ -108,6 +129,7 @@ export const config = {
       title: '分享卡',
       kicker: '恋人 · 角色卡',
       hook: '这三个词，你敢签吗',
+      score: '总分 · {total} / 100',
       paradox: '矛盾体',
       qrUrl: 'https://helloworld521.github.io/tarot-card',
       qrText: 'helloworld521.github.io/tarot-card',

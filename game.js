@@ -1,5 +1,6 @@
 import { config } from './data/config.js';
 import { traits } from './data/traits.js';
+import { scenes } from './data/scenes.js';
 import { combos } from './data/combos.js';
 import { createShareCard } from './share.js';
 
@@ -11,6 +12,12 @@ const traitById = Object.fromEntries(traits.map((trait) => [trait.id, trait]));
 const numeralById = new Map(
   traits.map((trait, index) => [trait.id, config.cardNumerals[index] || String(index + 1)]),
 );
+const scoreSpan = config.axisRange * config.maxTraits;
+
+function sceneOf(id) {
+  const trait = traitById[id];
+  return (trait && scenes[trait.sceneId]) || {};
+}
 
 const state = {
   screen: 'start',
@@ -195,13 +202,16 @@ function buildRelations() {
 
 function buildTraitGrid() {
   $('#traits-grid').innerHTML = traits
-    .map((trait, index) => `
+    .map((trait, index) => {
+      const scene = sceneOf(trait.id);
+      return `
       <button class="trait-card" type="button" data-id="${esc(trait.id)}" aria-pressed="false" style="--deal:${(index * 0.028).toFixed(3)}s">
         <span class="card-numeral">${esc(config.cardNumerals[index] || index + 1)}</span>
         <span class="trait-name">${esc(trait.name)}</span>
-        <span class="trait-scene">${esc(trait.frontScene)}</span>
+        <span class="trait-scene">${esc(scene.frontScene)}</span>
       </button>
-    `)
+    `;
+    })
     .join('');
 }
 
@@ -306,20 +316,21 @@ function buildReveal() {
   $('#reveal-list').innerHTML = state.selected
     .map((id, index) => {
       const trait = traitById[id];
+      const scene = sceneOf(id);
       return `
         <div class="flip-card" style="--deal:${(index * 0.06).toFixed(3)}s">
           <div class="flip-inner">
             <div class="face face-front">
               <span class="face-numeral">${esc(numeralById.get(id) || '')}</span>
               <span class="trait-name">${esc(trait.name)}</span>
-              <span class="scene">${esc(trait.frontScene)}</span>
+              <span class="scene">${esc(scene.frontScene)}</span>
               <span class="face-mark">${esc(c.reveal.frontMark)}</span>
             </div>
             <div class="face face-back">
               <span class="face-numeral">${esc(numeralById.get(id) || '')}</span>
               <span class="cost-kicker">${esc(c.reveal.backMark)}</span>
-              <span class="cost-label">${esc(trait.costLabel)}</span>
-              <span class="scene">${esc(trait.backScene)}</span>
+              <span class="cost-label">${esc(scene.costLabel)}</span>
+              <span class="scene">${esc(scene.backScene)}</span>
             </div>
           </div>
         </div>
@@ -354,14 +365,56 @@ function fillFallback(line, chosen) {
     .replaceAll('{first}', chosen[0].name)
     .replaceAll('{second}', chosen[1].name)
     .replaceAll('{third}', chosen[2].name)
-    .replaceAll('{cost2}', chosen[1].costLabel)
-    .replaceAll('{cost3}', chosen[2].costLabel);
+    .replaceAll('{cost2}', sceneOf(chosen[1].id).costLabel || '')
+    .replaceAll('{cost3}', sceneOf(chosen[2].id).costLabel || '');
+}
+
+function rawScoreOf(sum) {
+  const { rawMin, rawMax } = config.scoring;
+  return rawMin + Math.round(((sum + scoreSpan) / (scoreSpan * 2)) * (rawMax - rawMin));
+}
+
+function totalScoreOf(rawTotal) {
+  const { rawTotalFloor, rawTotalCeiling, minTotal, maxTotal } = config.scoring;
+  const ratio = (rawTotal - rawTotalFloor) / (rawTotalCeiling - rawTotalFloor);
+  const total = Math.round(minTotal + ratio * (maxTotal - minTotal));
+  return Math.min(maxTotal, Math.max(minTotal, total));
+}
+
+// 每个维度先拿总分下限的均分（80 / 4 = 20），再把超出下限的部分
+// 按各维原始分占比分摊；最大余数法保证分项之和严格等于总分。
+function splitTotal(total, weights) {
+  const base = config.scoring.minTotal / config.axes.length;
+  const extra = total - config.scoring.minTotal;
+  const weightSum = weights.reduce((sum, weight) => sum + weight, 0);
+  const parts = weights.map((weight) => Math.floor((extra * weight) / weightSum));
+  const rest = extra - parts.reduce((sum, part) => sum + part, 0);
+  const order = weights
+    .map((weight, index) => ({
+      index,
+      fraction: (extra * weight) / weightSum - parts[index],
+    }))
+    .sort((a, b) => b.fraction - a.fraction || a.index - b.index);
+  order.slice(0, rest).forEach((item) => {
+    parts[item.index] += 1;
+  });
+  return parts.map((part) => base + part);
+}
+
+// 随机入口集中在这里，以后要固定种子只改这个函数。
+function randomIndex(length) {
+  return Math.floor(Math.random() * length);
+}
+
+function pickCombo(ids) {
+  const matches = combos.filter((item) => item.traits.every((id) => ids.includes(id)));
+  return matches[randomIndex(matches.length)] || null;
 }
 
 function computeResult() {
   const chosen = state.selected.map((id) => traitById[id]);
   const ids = chosen.map((trait) => trait.id);
-  const combo = combos.find((item) => item.traits.every((id) => ids.includes(id)));
+  const combo = pickCombo(ids);
 
   let comboName = '';
   let comboText = '';
@@ -382,6 +435,18 @@ function computeResult() {
     });
   });
 
+  const raw = Object.fromEntries(
+    config.axes.map((axis) => [axis.key, rawScoreOf(sums[axis.key])]),
+  );
+  const rawTotal = config.axes.reduce((sum, axis) => sum + raw[axis.key], 0);
+  const total = totalScoreOf(rawTotal);
+  const parts = splitTotal(total, config.axes.map((axis) => raw[axis.key]));
+
+  const scores = { total };
+  config.axes.forEach((axis, index) => {
+    scores[axis.key] = parts[index];
+  });
+
   let weak = config.axes[0];
   config.axes.forEach((axis) => {
     if (sums[axis.key] < sums[weak.key]) weak = axis;
@@ -397,9 +462,35 @@ function computeResult() {
     paradox,
     weak: weak.key,
     weakText: config.weakSentence.replace('{weak}', weak.weak),
+    scores,
     createdAt: Date.now(),
     saved: false,
   };
+}
+
+function scoreBlockHtml(scores) {
+  if (!scores || typeof scores.total !== 'number') return '';
+
+  const axes = config.axes
+    .map((axis) => `
+      <span class="score-axis">
+        <span class="score-axis-label">${esc(axis.label)}</span>
+        <span class="score-axis-value">${esc(scores[axis.key] ?? '')}</span>
+      </span>
+    `)
+    .join('');
+
+  return `
+    <div class="score-block">
+      <div class="score-total">
+        <span class="score-label">${esc(c.result.scoreLabel)}</span>
+        <span class="score-number">${esc(scores.total)}</span>
+        <span class="score-denominator">${esc(c.result.scoreDenominator)}</span>
+      </div>
+      <p class="score-axes-label">${esc(c.result.scoresLabel)}</p>
+      <div class="score-axes">${axes}</div>
+    </div>
+  `;
 }
 
 function renderResult() {
@@ -411,7 +502,7 @@ function renderResult() {
     .join('');
 
   const costTags = result.traits
-    .map((id) => `<span class="cost-tag">${esc(traitById[id]?.costLabel || '')}</span>`)
+    .map((id) => `<span class="cost-tag">${esc(sceneOf(id).costLabel || '')}</span>`)
     .join('');
 
   const comboBlock = `
@@ -435,6 +526,7 @@ function renderResult() {
     <p class="cost-label-small">${esc(c.result.costsLabel)}</p>
     <div class="cost-strip">${costTags}</div>
     <p class="weak-line">${esc(result.weakText)}</p>
+    ${scoreBlockHtml(result.scores)}
   `;
 
   $('#result-save').textContent = result.saved ? c.result.saved : c.result.save;
@@ -559,12 +651,12 @@ function renderDetail(card) {
 
   const costRows = card.traits
     .map((id) => {
-      const trait = traitById[id];
-      if (!trait) return '';
+      const scene = sceneOf(id);
+      if (!scene.costLabel) return '';
       return `
         <div class="cost-row">
-          <span class="cost-tag">${esc(trait.costLabel)}</span>
-          <p class="scene">${esc(trait.backScene)}</p>
+          <span class="cost-tag">${esc(scene.costLabel)}</span>
+          <p class="scene">${esc(scene.backScene)}</p>
         </div>
       `;
     })
@@ -600,6 +692,7 @@ function renderDetail(card) {
     </div>
     ${comboBlock}
     <p class="weak-line">${esc(card.weakText || '')}</p>
+    ${scoreBlockHtml(card.scores)}
     <p class="detail-date">${esc(c.contacts.savedOn.replace('{date}', formatDate(card.createdAt)))}</p>
     <button class="btn danger" id="detail-delete" type="button">${esc(c.contacts.delete)}</button>
   `;
